@@ -1,0 +1,76 @@
+{
+  "name": "auto-theme-switcher",
+  "displayName": "Auto Theme Switcher",
+  "description": "Automatically switch between your preferred light and dark themes based on system theme",
+  "version": "0.0.1",
+  "publisher": "moshfiqur",
+  "license": "MIT",
+  "engines": {
+    "vscode": "^1.60.0"
+  },
+  "categories": [
+    "Themes",
+    "Other"
+  ],
+  "activationEvents": [
+    "*"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "configuration": {
+      "title": "Auto Theme Switcher",
+      "properties": {
+        "autoThemeSwitcher.lightTheme": {
+          "type": "string",
+          "default": "Default Light+",
+          "description": "Select your preferred light theme",
+          "enum": []
+        },
+        "autoThemeSwitcher.darkTheme": {
+          "type": "string",
+          "default": "Default Dark+",
+          "description": "Select your preferred dark theme",
+          "enum": []
+        },
+        "autoThemeSwitcher.notifyOnSwitch": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show a notification when the theme auto-switches"
+        },
+        "autoThemeSwitcher.statusBarEnabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show a status bar item indicating the active theme"
+        }
+      }
+    },
+    "commands": [
+      {
+        "command": "autoThemeSwitcher.switchToLight",
+        "title": "Auto Theme Switcher: Switch to Light Theme"
+      },
+      {
+        "command": "autoThemeSwitcher.switchToDark",
+        "title": "Auto Theme Switcher: Switch to Dark Theme"
+      },
+      {
+        "command": "autoThemeSwitcher.selectThemes",
+        "title": "Auto Theme Switcher: Select Light and Dark Themes"
+      },
+      {
+        "command": "autoThemeSwitcher.toggleTheme",
+        "title": "Auto Theme Switcher: Toggle Light/Dark"
+      }
+    ]
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./"
+  },
+  "devDependencies": {
+    "@types/node": "^18.18.0",
+    "@types/vscode": "^1.84.0",
+    "typescript": "^5.3.3"
+  }
+}

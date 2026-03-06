@@ -193,9 +193,9 @@ function updateStatusBar(): void {
     return;
   }
 
-  const activeKind = normalizeThemeKind(vscode.window.activeColorTheme.kind);
-  const preferred = resolvePreferredTheme(activeKind);
-  const icon = getIconForKind(activeKind);
+  const rawKind = vscode.window.activeColorTheme.kind;
+  const preferred = resolvePreferredTheme(normalizeThemeKind(rawKind));
+  const icon = getIconForKind(rawKind);
   statusBarItem.text = `${icon} ${preferred}`;
   statusBarItem.tooltip = 'Auto Theme Switcher (click to toggle)';
   statusBarItem.show();

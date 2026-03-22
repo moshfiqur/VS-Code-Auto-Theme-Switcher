@@ -13,7 +13,11 @@
     "Other"
   ],
   "activationEvents": [
-    "*"
+    "onStartupFinished",
+    "onCommand:autoThemeSwitcher.switchToLight",
+    "onCommand:autoThemeSwitcher.switchToDark",
+    "onCommand:autoThemeSwitcher.selectThemes",
+    "onCommand:autoThemeSwitcher.toggleTheme"
   ],
   "main": "./out/extension.js",
   "contributes": {

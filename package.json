@@ -6,18 +6,14 @@
   "publisher": "moshfiqur",
   "license": "MIT",
   "engines": {
-    "vscode": "^1.60.0"
+    "vscode": "^1.84.0"
   },
   "categories": [
     "Themes",
     "Other"
   ],
   "activationEvents": [
-    "onStartupFinished",
-    "onCommand:autoThemeSwitcher.switchToLight",
-    "onCommand:autoThemeSwitcher.switchToDark",
-    "onCommand:autoThemeSwitcher.selectThemes",
-    "onCommand:autoThemeSwitcher.toggleTheme"
+    "onStartupFinished"
   ],
   "main": "./out/extension.js",
   "contributes": {

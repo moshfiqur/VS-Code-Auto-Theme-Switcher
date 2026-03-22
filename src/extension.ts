@@ -22,6 +22,8 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   configuration = readConfiguration();
   updateConfigurationEnums(themeManager);
 
+  await ensureAutoDetectEnabled();
+
   statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 100);
   statusBarItem.command = 'autoThemeSwitcher.toggleTheme';
   context.subscriptions.push(statusBarItem);
@@ -269,13 +271,31 @@ function shouldApplyAutoTheme(kind: vscode.ColorThemeKind): boolean {
     return false;
   }
 
-  return getWorkbenchThemeLabel() === preferred;
+  return getWorkbenchThemeLabel() !== preferred;
 }
 
 function isAutoDetectEnabled(): boolean {
   return vscode.workspace
     .getConfiguration('window')
     .get<boolean>('autoDetectColorScheme', false);
+}
+
+async function ensureAutoDetectEnabled(): Promise<void> {
+  if (isAutoDetectEnabled()) {
+    return;
+  }
+
+  const enable = 'Enable OS Theme Auto-Detect';
+  const response = await vscode.window.showWarningMessage(
+    'Auto Theme Switcher needs OS theme auto-detect. Enable it now?',
+    enable
+  );
+
+  if (response === enable) {
+    await vscode.workspace
+      .getConfiguration('window')
+      .update('autoDetectColorScheme', true, vscode.ConfigurationTarget.Global);
+  }
 }
 
 function getPreferredThemeLabel(kind: vscode.ColorThemeKind): string | undefined {

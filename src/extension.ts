@@ -14,6 +14,8 @@ import { ExtensionConfiguration, ThemeInfo } from './types';
 let themeManager: ThemeManager;
 let configuration: ExtensionConfiguration;
 let statusBarItem: vscode.StatusBarItem;
+let suppressThemeEvents = 0;
+let manualOverride = false;
 
 export async function activate(context: vscode.ExtensionContext): Promise<void> {
   themeManager = new ThemeManager();
@@ -73,7 +75,20 @@ export function deactivate(): void {
 }
 
 async function handleSystemThemeChange(kind: vscode.ColorThemeKind): Promise<void> {
-  await synchronizeWithSystemTheme(kind);
+  if (suppressThemeEvents > 0) {
+    suppressThemeEvents -= 1;
+    return;
+  }
+
+  const normalizedKind = normalizeThemeKind(kind);
+  if (shouldApplyAutoTheme(normalizedKind)) {
+    manualOverride = false;
+    await applyConfiguredTheme(normalizedKind, true);
+    return;
+  }
+
+  manualOverride = true;
+  updateStatusBar();
 }
 
 async function synchronizeWithSystemTheme(kind: vscode.ColorThemeKind): Promise<void> {
@@ -85,6 +100,10 @@ async function applyConfiguredTheme(
   kind: vscode.ColorThemeKind,
   fromSystemChange: boolean
 ): Promise<void> {
+  if (!fromSystemChange) {
+    manualOverride = false;
+  }
+
   const themeLabel = resolvePreferredTheme(kind);
   const applied = await applyThemeWithFallback(themeLabel, kind);
   if (applied && configuration.notifyOnSwitch && fromSystemChange) {
@@ -97,17 +116,30 @@ async function applyThemeWithFallback(
   preferredLabel: string,
   kind: vscode.ColorThemeKind
 ): Promise<boolean> {
-  if (await themeManager.applyTheme(preferredLabel)) {
+  if (await applyThemeLabel(preferredLabel)) {
     return true;
   }
 
   const fallback = themeManager.getFallback(kind);
   if (fallback) {
-    return themeManager.applyTheme(fallback.label);
+    return applyThemeLabel(fallback.label);
   }
 
   const defaultLabel = defaultLabelForKind(kind);
-  return themeManager.applyTheme(defaultLabel);
+  return applyThemeLabel(defaultLabel);
+}
+
+async function applyThemeLabel(label: string): Promise<boolean> {
+  if (label === getWorkbenchThemeLabel()) {
+    return true;
+  }
+
+  if (!themeManager.getThemeByLabel(label)) {
+    return false;
+  }
+
+  suppressThemeEvents += 1;
+  return themeManager.applyTheme(label);
 }
 
 function resolvePreferredTheme(kind: vscode.ColorThemeKind): string {
@@ -195,9 +227,12 @@ function updateStatusBar(): void {
 
   const rawKind = vscode.window.activeColorTheme.kind;
   const preferred = resolvePreferredTheme(normalizeThemeKind(rawKind));
+  const displayLabel = manualOverride ? getWorkbenchThemeLabel() : preferred;
   const icon = getIconForKind(rawKind);
-  statusBarItem.text = `${icon} ${preferred}`;
-  statusBarItem.tooltip = 'Auto Theme Switcher (click to toggle)';
+  statusBarItem.text = `${icon} ${displayLabel}`;
+  statusBarItem.tooltip = manualOverride
+    ? 'Auto Theme Switcher (manual override active)'
+    : 'Auto Theme Switcher (click to toggle)';
   statusBarItem.show();
 }
 
@@ -222,4 +257,37 @@ function getIconForKind(kind: vscode.ColorThemeKind): string {
     default:
       return '$(moon)';
   }
+}
+
+function shouldApplyAutoTheme(kind: vscode.ColorThemeKind): boolean {
+  if (!isAutoDetectEnabled()) {
+    return false;
+  }
+
+  const preferred = getPreferredThemeLabel(kind);
+  if (!preferred) {
+    return false;
+  }
+
+  return getWorkbenchThemeLabel() === preferred;
+}
+
+function isAutoDetectEnabled(): boolean {
+  return vscode.workspace
+    .getConfiguration('window')
+    .get<boolean>('autoDetectColorScheme', false);
+}
+
+function getPreferredThemeLabel(kind: vscode.ColorThemeKind): string | undefined {
+  const config = vscode.workspace.getConfiguration('workbench');
+  if (kind === vscode.ColorThemeKind.Light) {
+    return config.get<string>('preferredLightColorTheme');
+  }
+  return config.get<string>('preferredDarkColorTheme');
+}
+
+function getWorkbenchThemeLabel(): string {
+  return (
+    vscode.workspace.getConfiguration('workbench').get<string>('colorTheme') || ''
+  );
 }
